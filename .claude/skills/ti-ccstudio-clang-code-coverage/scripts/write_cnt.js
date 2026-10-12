@@ -52,8 +52,8 @@
 
 "use strict";
 
-const fs   = require("fs");
-const path = require("path");
+var fs   = require("fs");
+var path = require("path");
 
 // =============================================================================
 // Argument parsing
@@ -62,16 +62,16 @@ const path = require("path");
 function parseArgs() {
     // process.argv = ["node", "write_cnt.js", arg1, arg2, ...]
     // slice(2) gives us only the user-supplied arguments
-    const args = process.argv.slice(2);
+    var args = process.argv.slice(2);
 
-    const opts = {
+    var opts = {
         output: null,   // path for the output .cnt binary file
         chunks: [],     // ordered list of counter section chunk JSON files
         mcdc:   null,   // optional path to the MC/DC section JSON file
     };
 
-    for (let i = 0; i < args.length; i++) {
-        const arg = args[i];
+    for (var i = 0; i < args.length; i++) {
+        var arg = args[i];
 
         if (arg === "--output" && i + 1 < args.length) {
             // Destination path for the assembled .cnt binary
@@ -100,7 +100,7 @@ function parseArgs() {
     if (!opts.output || opts.chunks.length === 0) {
         console.error(
             "Usage: node write_cnt.js --output <output.cnt> " +
-            "--chunk <chunk.json> [--chunk <chunk2.json>]... [--mcdc <mcdc.json>]",
+            "--chunk <chunk.json> [--chunk <chunk2.json>]... [--mcdc <mcdc.json>]"
         );
         process.exit(1);
     }
@@ -121,31 +121,31 @@ function parseArgs() {
 
 function readHexFile(filePath) {
     // Read the JSON text from disk
-    const raw = fs.readFileSync(filePath, "utf-8");
+    var raw = fs.readFileSync(filePath, "utf-8");
 
     // Parse the JSON — we expect an array of hex-string elements
-    const arr = JSON.parse(raw);
+    var arr = JSON.parse(raw);
     if (!Array.isArray(arr)) {
         throw new Error(filePath + ": expected a JSON array of hex strings");
     }
 
     // Convert each "ff" hex string to the integer 255, then wrap in a Buffer.
     // parseInt(h, 16) converts a hex string to an integer (base 16).
-    return Buffer.from(arr.map((h) => { return parseInt(h, 16); }));
+    return Buffer.from(arr.map(function(h) { return parseInt(h, 16); }));
 }
 
 // =============================================================================
 // Main entry point
 // =============================================================================
 
-const opts = parseArgs();
+var opts = parseArgs();
 
 // We collect all byte buffers here in order, then concatenate them once at the
 // end.  This is more efficient than repeatedly concatenating growing buffers.
-const buffers = [];
+var buffers = [];
 
 // Track counter byte total separately from MC/DC bytes for the summary message
-let totalCntBytes = 0;
+var totalCntBytes = 0;
 
 // -----------------------------------------------------------------------
 // Process counter section chunks (--chunk flags)
@@ -153,8 +153,8 @@ let totalCntBytes = 0;
 // bytes of the __llvm_prf_cnts section.  Chunks must be listed in
 // ascending address order so the bytes are concatenated correctly.
 // -----------------------------------------------------------------------
-for (let i = 0; i < opts.chunks.length; i++) {
-    const buf = readHexFile(opts.chunks[i]);
+for (var i = 0; i < opts.chunks.length; i++) {
+    var buf = readHexFile(opts.chunks[i]);
     buffers.push(buf);
     totalCntBytes += buf.length;
     // Print a summary line for each chunk so the user can verify sizes
@@ -167,9 +167,9 @@ for (let i = 0; i < opts.chunks.length; i++) {
 // It is only present when -fmcdc was used at compile time.  The profdata
 // tool expects these bytes to follow the counter bytes in the .cnt file.
 // -----------------------------------------------------------------------
-let mcdcBytes = 0;
+var mcdcBytes = 0;
 if (opts.mcdc) {
-    const mcdcBuf = readHexFile(opts.mcdc);
+    var mcdcBuf = readHexFile(opts.mcdc);
     buffers.push(mcdcBuf);
     mcdcBytes = mcdcBuf.length;
     console.log("  mcdc  " + path.basename(opts.mcdc) + ": " + mcdcBytes + " bytes");
@@ -180,7 +180,7 @@ if (opts.mcdc) {
 // Buffer.concat efficiently merges all the individual chunk buffers into
 // one contiguous binary blob without any intermediate copies.
 // -----------------------------------------------------------------------
-const output = Buffer.concat(buffers);
+var output = Buffer.concat(buffers);
 fs.writeFileSync(opts.output, output);
 
 // Print a summary so the user can verify the total byte count against
@@ -188,5 +188,5 @@ fs.writeFileSync(opts.output, output);
 console.log(
     "Wrote " + output.length + " bytes " +
     "(" + totalCntBytes + " counter + " + mcdcBytes + " MC/DC) to " +
-    opts.output,
+    opts.output
 );

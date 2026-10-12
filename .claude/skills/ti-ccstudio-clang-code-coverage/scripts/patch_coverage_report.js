@@ -65,7 +65,8 @@
 //                   Use "TI C29 Clang" for C29 / C2000 projects.
 //   --ti-css        Path to the shared ti-brand.css file from the CCS installation.
 //                   When provided, the file is read and used instead of the embedded
-//                   fallback CSS. Resolve as {ccs-ai-resources-dir}/styles/ti-brand.css.
+//                   fallback CSS. Resolve via ccs.settings.md + platform path to
+//                   {ccs_install}/ccs/.../ai/styles/ti-brand.css.
 //
 // Idempotency:
 //   The script checks for a sentinel element (<div class='ti-patched'>) before
@@ -74,8 +75,8 @@
 
 "use strict";
 
-const fs   = require("fs");
-const path = require("path");
+var fs   = require("fs");
+var path = require("path");
 
 // =============================================================================
 // Sentinel strings
@@ -86,12 +87,12 @@ const path = require("path");
 
 // Inserted as an invisible <div> at the top of the body in patched files.
 // If this string is present, the file has already been patched by this script.
-const TI_PATCHED_SENTINEL = "ti-patched";
+var TI_PATCHED_SENTINEL = "ti-patched";
 
 // CSS class name added to the "← Summary" back-navigation link.
 // Also used as a sentinel: if this class is already in the file, the back
 // link has already been added and should not be added again.
-const BACK_LINK_SENTINEL = "cov-back-link";
+var BACK_LINK_SENTINEL = "cov-back-link";
 
 // Regex to find the relative path prefix to the report root from a source page.
 // Source file pages live in subdirectories (e.g. coverage/path/to/file.c.html)
@@ -100,7 +101,7 @@ const BACK_LINK_SENTINEL = "cov-back-link";
 // Example match:  href='../../style.css'  →  captured group: "../../"
 // On Windows, tiarmcov/c29cov emits backslash separators (e.g. "..\..\style.css"),
 // so the pattern accepts both '/' and '\' as the separator character.
-const CSS_HREF_RE = /href='((?:\.\.[\/\\])+)style\.css'/;
+var CSS_HREF_RE = /href='((?:\.\.[\/\\])+)style\.css'/;
 
 // =============================================================================
 // Runtime environment detection script (injected into every HTML page)
@@ -130,21 +131,18 @@ const CSS_HREF_RE = /href='((?:\.\.[\/\\])+)style\.css'/;
 // The script is written as a single concatenated string to make injection into
 // the HTML simple (no multiline string handling needed at the injection site).
 
-const ENV_DETECT_SCRIPT = "\
+var ENV_DETECT_SCRIPT = "\
 <script>\
 (function(){\
   var inWebview = (window.parent !== window);\
   if(!inWebview) return;\
   document.body.classList.add('ccstudio');\
-  \
-  /* Determine whether dark mode is active using three methods in priority order:\
-     1. data-vscode-theme-kind attribute (most reliable in Theia webview)\
-     2. --vscode-editor-background CSS variable luminance\
-     3. prefers-color-scheme media query (OS-level fallback) */\
-  function isDark() {\
-    var tk = document.body.getAttribute('data-vscode-theme-kind')\
-          || document.documentElement.getAttribute('data-vscode-theme-kind');\
-    if(tk) return (tk === 'vscode-dark' || tk === 'vscode-high-contrast');\
+  var dark = false;\
+  var tk = document.body.getAttribute('data-vscode-theme-kind')\
+        || document.documentElement.getAttribute('data-vscode-theme-kind');\
+  if(tk) {\
+    dark = (tk === 'vscode-dark' || tk === 'vscode-high-contrast');\
+  } else {\
     var bg = getComputedStyle(document.documentElement)\
              .getPropertyValue('--vscode-editor-background');\
     if(bg && bg.trim()) {\
@@ -155,32 +153,14 @@ const ENV_DETECT_SCRIPT = "\
       document.body.removeChild(d);\
       var m = c.match(/rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)\\)/);\
       if(m) {\
-        var lum=(0.299*parseInt(m[1])+0.587*parseInt(m[2])+0.114*parseInt(m[3]))/255;\
-        return lum < 0.5;\
+        var lum = (0.299*parseInt(m[1]) + 0.587*parseInt(m[2]) + 0.114*parseInt(m[3])) / 255;\
+        dark = (lum < 0.5);\
       }\
+    } else if(window.matchMedia) {\
+      dark = window.matchMedia('(prefers-color-scheme: dark)').matches;\
     }\
-    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);\
   }\
-  \
-  /* Apply or remove the dark class based on current theme state */\
-  function applyTheme() {\
-    if(isDark()) document.body.classList.add('dark');\
-    else document.body.classList.remove('dark');\
-  }\
-  \
-  applyTheme();\
-  \
-  /* Watch for IDE theme changes via data-vscode-theme-kind attribute mutations.\
-     Theia sets this attribute on <html> and/or <body> when the user switches theme. */\
-  new MutationObserver(applyTheme).observe(document.documentElement,\
-    {attributes:true, attributeFilter:['data-vscode-theme-kind']});\
-  new MutationObserver(applyTheme).observe(document.body,\
-    {attributes:true, attributeFilter:['data-vscode-theme-kind']});\
-  \
-  /* Also respond to OS-level prefers-color-scheme changes (external browser) */\
-  if(window.matchMedia) {\
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);\
-  }\
+  if(dark) document.body.classList.add('dark');\
 })();\
 </script>";
 
@@ -201,7 +181,7 @@ const ENV_DETECT_SCRIPT = "\
 // The CSS is designed to cascade: dark mode rules override light mode rules,
 // and ccstudio rules override generic rules.
 
-const TI_CSS = "\n\
+var TI_CSS = "\n\
 /* ===== TI Brand - Light Mode (default / external browser) ===== */\n\
 body {\n\
   font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;\n\
@@ -401,17 +381,17 @@ body.dark tr:has(> td > a:target) > td.code > pre { background-color: #3a3a1e; }
 // tree of per-source-file HTML pages, so we need to recurse.
 
 function findHtmlFiles(dir) {
-    const results = [];
-    const entries = fs.readdirSync(dir);
+    var results = [];
+    var entries = fs.readdirSync(dir);
 
-    for (let i = 0; i < entries.length; i++) {
-        const fullPath = path.join(dir, entries[i]);
-        const stat = fs.statSync(fullPath);
+    for (var i = 0; i < entries.length; i++) {
+        var fullPath = path.join(dir, entries[i]);
+        var stat = fs.statSync(fullPath);
 
         if (stat.isDirectory()) {
             // Recurse into subdirectories to find nested source file pages
-            const nested = findHtmlFiles(fullPath);
-            for (let j = 0; j < nested.length; j++) {
+            var nested = findHtmlFiles(fullPath);
+            for (var j = 0; j < nested.length; j++) {
                 results.push(nested[j]);
             }
         } else if (entries[i].endsWith(".html")) {
@@ -437,7 +417,7 @@ function findHtmlFiles(dir) {
 
 function buildHeader(dateStr, opts) {
     // Start with the invisible sentinel div and the title bar
-    let header =
+    var header =
         "<div class='" + TI_PATCHED_SENTINEL + "'></div>" +
         "<div class='ti-header'>" +
         "<h2>Code Coverage Report</h2>" +
@@ -480,8 +460,8 @@ function buildHeader(dateStr, opts) {
 // Returns true if the file was modified, false if it was already patched.
 
 function patchIndexPage(filePath, opts) {
-    let content = fs.readFileSync(filePath, "utf-8");
-    const original = content;
+    var content = fs.readFileSync(filePath, "utf-8");
+    var original = content;
 
     // Idempotency check: if the sentinel is already present, skip this file
     if (content.indexOf(TI_PATCHED_SENTINEL) !== -1) {
@@ -499,10 +479,10 @@ function patchIndexPage(filePath, opts) {
     //      <p>Click <a ...>here</a> for information about interpreting this report.</p>
     //    We capture the date string from the h4 so we can include it in the new header.
     content = content.replace(
-        /<h2>Coverage Report<\/h2><h4>Created: ([^<]+)<\/h4><p>Click <a[^>]*>[^<]*<\/a> for information about interpreting this report\.<\/p>/, // eslint-disable-line max-len
-        (match, dateStr) => {
+        /<h2>Coverage Report<\/h2><h4>Created: ([^<]+)<\/h4><p>Click <a[^>]*>[^<]*<\/a> for information about interpreting this report\.<\/p>/,
+        function(match, dateStr) {
             return buildHeader(dateStr, opts);
-        },
+        }
     );
 
     // 3. Replace the llvm-cov footer.
@@ -513,7 +493,7 @@ function patchIndexPage(filePath, opts) {
     //    --toolchain command-line argument.
     content = content.replace(
         /<h5>Generated by llvm-cov -- llvm version [^<]*<\/h5>/,
-        "<h5>Generated by " + opts.toolchain + " Code Coverage Tools</h5>",
+        "<h5>Generated by " + opts.toolchain + " Code Coverage Tools</h5>"
     );
 
     // If nothing changed (header pattern didn't match), report was in an unexpected
@@ -546,8 +526,8 @@ function patchIndexPage(filePath, opts) {
 // Returns true if the file was modified, false otherwise.
 
 function patchSourceFile(filePath, opts) {
-    let content = fs.readFileSync(filePath, "utf-8");
-    const original = content;
+    var content = fs.readFileSync(filePath, "utf-8");
+    var original = content;
 
     // 1. Inject the runtime environment detection script.
     //    Guard against double-injection: if "ccstudio" class is already in the
@@ -563,9 +543,9 @@ function patchSourceFile(filePath, opts) {
     if (content.indexOf(TI_PATCHED_SENTINEL) === -1) {
         content = content.replace(
             /<h2>Coverage Report<\/h2><h4>Created: ([^<]+)<\/h4>/,
-            (match, dateStr) => {
+            function(match, dateStr) {
                 return buildHeader(dateStr, opts);
-            },
+            }
         );
     }
 
@@ -578,7 +558,7 @@ function patchSourceFile(filePath, opts) {
     //    In an external browser the link remains fully visible and functional.
     content = content.replace(
         /(\s*\(<a[^>]*>jump to first uncovered line<\/a>\))/g,
-        "<span class='jump-to-uncovered'>$1</span>",
+        "<span class='jump-to-uncovered'>$1</span>"
     );
 
     // 4. Insert a "← Summary" back-navigation link in the sticky source-name header.
@@ -592,15 +572,15 @@ function patchSourceFile(filePath, opts) {
     //
     //    Guard against double-insertion using BACK_LINK_SENTINEL.
     if (content.indexOf(BACK_LINK_SENTINEL) === -1) {
-        const m = CSS_HREF_RE.exec(content);
+        var m = CSS_HREF_RE.exec(content);
         if (m) {
             // m[1] is the relative prefix, e.g. "../../" (or "..\..\" on Windows).
             // Normalize to forward slashes since this is an HTML href (URL).
-            const prefix    = m[1].replace(/\\/g, "/");
-            const indexHref = prefix + "index.html";
+            var prefix    = m[1].replace(/\\/g, '/');
+            var indexHref = prefix + "index.html";
 
             // Build the anchor element with inline style to match the header bar
-            const backLink =
+            var backLink =
                 "<a class='" + BACK_LINK_SENTINEL + "' href='" + indexHref +
                 "' style='margin-right:12px;text-decoration:none;" +
                 "font-size:0.9em'>&#8592; Summary</a>";
@@ -609,7 +589,7 @@ function patchSourceFile(filePath, opts) {
             // before the filename text
             content = content.replace(
                 "<div class='source-name-title'>",
-                "<div class='source-name-title'>" + backLink,
+                "<div class='source-name-title'>" + backLink
             );
         }
     }
@@ -635,9 +615,9 @@ function patchSourceFile(filePath, opts) {
 // Guards against double-patching by checking for the "TI Brand" comment string.
 
 function patchStylesheet(reportDir, tiCssPath) {
-    const cssPath = path.join(reportDir, "style.css");
+    var cssPath = path.join(reportDir, "style.css");
     try {
-        const content = fs.readFileSync(cssPath, "utf-8");
+        var content = fs.readFileSync(cssPath, "utf-8");
 
         // Idempotency check: the TI_CSS block starts with a "TI Brand" comment
         if (content.indexOf("TI Brand") !== -1) {
@@ -646,7 +626,7 @@ function patchStylesheet(reportDir, tiCssPath) {
 
         // Use the shared ti-brand.css if a path was provided and the file is readable;
         // otherwise fall back to the embedded TI_CSS constant.
-        let brandCss = TI_CSS;
+        var brandCss = TI_CSS;
         if (tiCssPath) {
             try {
                 brandCss = fs.readFileSync(tiCssPath, "utf-8");
@@ -674,15 +654,15 @@ function patchStylesheet(reportDir, tiCssPath) {
 //   ["/path/to/node", "/path/to/patch_coverage_report.js", arg1, arg2, ...]
 // so we slice from index 3 (not 2) to get the user-supplied arguments.
 
-const args = process.argv.slice(3);
-let reportDir       = null;
-let projectName     = null;
-let compilerVersion = null;
-let coverageType    = null;
-let toolchain       = "TI Arm Clang"; // default; override with --toolchain for C29
-let tiCssPath       = null;            // path to shared ti-brand.css; falls back to TI_CSS
+var args = process.argv.slice(3);
+var reportDir       = null;
+var projectName     = null;
+var compilerVersion = null;
+var coverageType    = null;
+var toolchain       = "TI Arm Clang"; // default; override with --toolchain for C29
+var tiCssPath       = null;            // path to shared ti-brand.css; falls back to TI_CSS
 
-for (let i = 0; i < args.length; i++) {
+for (var i = 0; i < args.length; i++) {
     if (args[i] === "--project" && i + 1 < args.length) {
         // Project name shown in the metadata bar of the report header
         projectName = args[++i];
@@ -714,14 +694,14 @@ if (!reportDir) {
     console.error(
         "Usage: run.sh patch_coverage_report.js <report_dir> " +
         "[--project <name>] [--compiler <version>] [--coverage-type <type>] " +
-        "[--toolchain <name>]",
+        "[--toolchain <name>]"
     );
     process.exit(1);
 }
 
 // Verify the path is an actual directory (not a file or missing path)
 try {
-    const st = fs.statSync(reportDir);
+    var st = fs.statSync(reportDir);
     if (!st.isDirectory()) {
         throw new Error("not a directory");
     }
@@ -735,7 +715,7 @@ try {
 // =============================================================================
 
 // Bundle all the metadata options into a single object for easy passing around
-const opts = {
+var opts = {
     projectName:     projectName,
     compilerVersion: compilerVersion,
     coverageType:    coverageType,
@@ -750,7 +730,7 @@ if (patchStylesheet(reportDir, tiCssPath)) {
 }
 
 // Step 2: Patch the summary index page
-const indexPath = path.join(reportDir, "index.html");
+var indexPath = path.join(reportDir, "index.html");
 try {
     if (patchIndexPage(indexPath, opts)) {
         console.log("  Patched: index.html");
@@ -763,10 +743,10 @@ try {
 // Step 3: Patch all source file pages
 //         findHtmlFiles recursively collects every .html file in the report
 //         directory tree, then we skip index.html (already patched above).
-const htmlFiles = findHtmlFiles(reportDir);
-let patched = 0;
+var htmlFiles = findHtmlFiles(reportDir);
+var patched = 0;
 
-for (let j = 0; j < htmlFiles.length; j++) {
+for (var j = 0; j < htmlFiles.length; j++) {
     // Skip index.html — it was handled separately above
     if (htmlFiles[j] === indexPath) {
         continue;

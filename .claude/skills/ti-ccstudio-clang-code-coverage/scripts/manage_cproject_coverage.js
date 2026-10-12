@@ -44,8 +44,8 @@
 
 "use strict";
 
-const fs   = require("fs");
-const path = require("path");
+var fs   = require("fs");
+var path = require("path");
 
 // =============================================================================
 // Argument parsing
@@ -54,9 +54,9 @@ const path = require("path");
 function parseArgs() {
     // process.argv = ["node", "script.js", arg1, arg2, ...]
     // slice(2) gives us the user-supplied arguments only
-    const args = process.argv.slice(2);
+    var args = process.argv.slice(2);
 
-    const opts = {
+    var opts = {
         command:      null,    // "add" | "remove"
         cproject:     null,    // path to the .cproject file
         mcdc:         false,   // --mcdc: add -fmcdc flag
@@ -76,7 +76,7 @@ function parseArgs() {
     }
 
     // Parse remaining named arguments
-    for (let i = 1; i < args.length; i++) {
+    for (var i = 1; i < args.length; i++) {
         switch (args[i]) {
             case "--cproject":
                 // Path to the .cproject file to modify
@@ -131,7 +131,7 @@ function printUsageAndExit() {
         "  node manage_cproject_coverage.js add --cproject <path>\n" +
         "      [--mcdc] [--function-only] [--counter-size 32|64]\n" +
         "\n" +
-        "  node manage_cproject_coverage.js remove --cproject <path>",
+        "  node manage_cproject_coverage.js remove --cproject <path>"
     );
     process.exit(1);
 }
@@ -161,10 +161,10 @@ function printUsageAndExit() {
 //     [\d]+\.[\d]+       — version number, e.g. "4.0" or "2.1"
 //   )                    — end capture group
 //   \.exe\.              — literal suffix after the version, before the tool type
-const PREFIX_RE = /buildDefinitions\.((?:TMS470|C2000)_TICLANG_[\d]+\.[\d]+)\.exe\./;
+var PREFIX_RE = /buildDefinitions\.((?:TMS470|C2000)_TICLANG_[\d]+\.[\d]+)\.exe\./;
 
 function extractPrefix(superClass) {
-    const m = PREFIX_RE.exec(superClass);
+    var m = PREFIX_RE.exec(superClass);
     // Return the captured prefix group, or null if the superClass doesn't match
     // (e.g. it's a linker, hex utility, or SysConfig tool — those are skipped)
     return m ? m[1] : null;
@@ -188,14 +188,14 @@ function extractPrefix(superClass) {
 function findMaxOptionId(content) {
     // Start at 100,000,000 as a floor — well above zero but leaves room below
     // the typical CCS-generated IDs which are random 9-digit numbers
-    let max = 100000000;
+    var max = 100000000;
 
     // Match any id="..." attribute whose last dot-separated segment is 6+ digits.
     // This catches the standard CCS option ID format reliably.
-    const re = /id="[^"]*\.(\d{6,})"/g;
-    let m;
+    var re = /id="[^"]*\.(\d{6,})"/g;
+    var m;
     while ((m = re.exec(content)) !== null) {
-        const n = parseInt(m[1], 10);
+        var n = parseInt(m[1], 10);
         if (n > max) {
             max = n;
         }
@@ -215,14 +215,14 @@ function findMaxOptionId(content) {
 // inside the compilerDebug tool in a typical CCStudio .cproject file.
 
 // 32 spaces = 8 levels × 4 spaces each — matches standard .cproject indentation
-const INDENT = "                                ";
+var INDENT = "                                ";
 
 function buildOptionsXml(prefix, opts, baseId) {
     // Build the namespace prefix shared by all options for this compiler version
     // e.g. "com.ti.ccstudio.buildDefinitions.TMS470_TICLANG_4.0.compilerID."
-    const ns = "com.ti.ccstudio.buildDefinitions." + prefix + ".compilerID.";
+    var ns = "com.ti.ccstudio.buildDefinitions." + prefix + ".compilerID.";
 
-    const lines = [];
+    var lines = [];
 
     // -------------------------------------------------------------------------
     // Mandatory flag 1: -fcoverage-mapping
@@ -233,7 +233,7 @@ function buildOptionsXml(prefix, opts, baseId) {
     lines.push(
         INDENT + "<option id=\"" + ns + "FCOVERAGE_MAPPING." + (baseId) + "\"\n" +
         INDENT + "        superClass=\"" + ns + "FCOVERAGE_MAPPING\"\n" +
-        INDENT + "        value=\"true\" valueType=\"boolean\"/>",
+        INDENT + "        value=\"true\" valueType=\"boolean\"/>"
     );
 
     // -------------------------------------------------------------------------
@@ -245,7 +245,7 @@ function buildOptionsXml(prefix, opts, baseId) {
     lines.push(
         INDENT + "<option id=\"" + ns + "FPROFILE_INSTR_GENERATE." + (baseId + 1) + "\"\n" +
         INDENT + "        superClass=\"" + ns + "FPROFILE_INSTR_GENERATE\"\n" +
-        INDENT + "        value=\"true\" valueType=\"boolean\"/>",
+        INDENT + "        value=\"true\" valueType=\"boolean\"/>"
     );
 
     // -------------------------------------------------------------------------
@@ -259,7 +259,7 @@ function buildOptionsXml(prefix, opts, baseId) {
         lines.push(
             INDENT + "<option id=\"" + ns + "FMCDC." + (baseId + 2) + "\"\n" +
             INDENT + "        superClass=\"" + ns + "FMCDC\"\n" +
-            INDENT + "        value=\"true\" valueType=\"boolean\"/>",
+            INDENT + "        value=\"true\" valueType=\"boolean\"/>"
         );
     }
 
@@ -274,7 +274,7 @@ function buildOptionsXml(prefix, opts, baseId) {
         lines.push(
             INDENT + "<option id=\"" + ns + "FFUNCTION_COVERAGE_ONLY." + (baseId + 3) + "\"\n" +
             INDENT + "        superClass=\"" + ns + "FFUNCTION_COVERAGE_ONLY\"\n" +
-            INDENT + "        value=\"true\" valueType=\"boolean\"/>",
+            INDENT + "        value=\"true\" valueType=\"boolean\"/>"
         );
     }
 
@@ -294,7 +294,7 @@ function buildOptionsXml(prefix, opts, baseId) {
         lines.push(
             INDENT + "<option id=\"" + ns + "FPROFILE_COUNTER_SIZE." + (baseId + 4) + "\"\n" +
             INDENT + "        superClass=\"" + ns + "FPROFILE_COUNTER_SIZE\"\n" +
-            INDENT + "        value=\"=" + opts.counterSize + "\" valueType=\"string\"/>",
+            INDENT + "        value=\"=" + opts.counterSize + "\" valueType=\"string\"/>"
         );
     }
 
@@ -321,19 +321,19 @@ function addFlags(content, opts) {
     // We look for superClass attributes containing "compilerDebug" or
     // "compilerRelease" to catch all build configurations.
     // We deliberately exclude linker, objcopy, hex, and SysConfig tools.
-    const toolOpenRe = /<tool\s[^>]*superClass="([^"]*(?:compilerDebug|compilerRelease)[^"]*)"[^>]*>/g;
+    var toolOpenRe = /<tool\s[^>]*superClass="([^"]*(?:compilerDebug|compilerRelease)[^"]*)"[^>]*>/g;
 
     // Each entry records where to insert and which prefix to use
-    const insertions = [];
-    let m;
+    var insertions = [];
+    var m;
 
     while ((m = toolOpenRe.exec(content)) !== null) {
-        const superClass = m[1];
+        var superClass = m[1];
 
         // Extract the version prefix from this tool's superClass.
         // Returns null for non-compiler tools (linker, SysConfig, etc.) which
         // we skip.
-        const prefix = extractPrefix(superClass);
+        var prefix = extractPrefix(superClass);
         if (!prefix) {
             continue;
         }
@@ -341,12 +341,12 @@ function addFlags(content, opts) {
         // The content between the opening <tool...> tag and its </tool> is
         // the tool body — this is where we look for existing options.
         // searchFrom is the character position right after the opening tag.
-        const searchFrom = m.index + m[0].length;
+        var searchFrom = m.index + m[0].length;
 
         // Find the closing </tool> tag.  Since tool elements do not nest in
         // .cproject files, the first </tool> after the opening tag is always
         // the correct matching close.
-        const closePos = content.indexOf("</tool>", searchFrom);
+        var closePos = content.indexOf("</tool>", searchFrom);
         if (closePos === -1) {
             // Malformed XML — skip this tool to be safe
             console.log("  warning: no closing </tool> found for tool at index " + m.index);
@@ -355,7 +355,7 @@ function addFlags(content, opts) {
 
         // Idempotency check: if FCOVERAGE_MAPPING is already present in this
         // tool body, the flags were already added — skip to avoid duplicates.
-        const toolBody = content.substring(searchFrom, closePos);
+        var toolBody = content.substring(searchFrom, closePos);
         if (toolBody.indexOf("FCOVERAGE_MAPPING") !== -1) {
             console.log("  skip (already flagged): " + prefix);
             continue;
@@ -372,22 +372,22 @@ function addFlags(content, opts) {
 
     // Find the highest existing option ID in the entire file so new IDs are
     // guaranteed not to collide with any existing ones.
-    const maxId = findMaxOptionId(content);
-    let nextId = maxId + 1;
+    var maxId = findMaxOptionId(content);
+    var nextId = maxId + 1;
 
     // Sort insertions from LAST to FIRST by character position.
     // This is critical: when we insert text, all character positions after the
     // insertion point shift by the length of the inserted text.  By working
     // backwards, we ensure that positions recorded for earlier tools remain
     // valid when we reach them.
-    insertions.sort((a, b) => { return b.closePos - a.closePos; });
+    insertions.sort(function(a, b) { return b.closePos - a.closePos; });
 
-    let result = content;
-    for (let i = 0; i < insertions.length; i++) {
-        const ins = insertions[i];
+    var result = content;
+    for (var i = 0; i < insertions.length; i++) {
+        var ins = insertions[i];
 
         // Build the XML option elements for this tool
-        const xml = buildOptionsXml(ins.prefix, opts, nextId);
+        var xml = buildOptionsXml(ins.prefix, opts, nextId);
 
         // Insert the options immediately before the </tool> closing tag
         result =
@@ -430,14 +430,14 @@ function addFlags(content, opts) {
 //   \/>                 — self-closing tag end (coverage options are never
 //                          container elements, so /> is always correct)
 
-const REMOVE_RE = /\n[ \t]*<option(?:[^>]|\n)*?superClass="[^"]*(?:FCOVERAGE_MAPPING|FPROFILE_INSTR_GENERATE|FMCDC|FFUNCTION_COVERAGE_ONLY|FPROFILE_COUNTER_SIZE)[^"]*"(?:[^>]|\n)*?\/>/g; // eslint-disable-line max-len
+var REMOVE_RE = /\n[ \t]*<option(?:[^>]|\n)*?superClass="[^"]*(?:FCOVERAGE_MAPPING|FPROFILE_INSTR_GENERATE|FMCDC|FFUNCTION_COVERAGE_ONLY|FPROFILE_COUNTER_SIZE)[^"]*"(?:[^>]|\n)*?\/>/g;
 
 function removeFlags(content) {
-    let count = 0;
+    var count = 0;
 
     // Replace every matching <option> element with an empty string.
     // The replacement function is used so we can count how many were removed.
-    const result = content.replace(REMOVE_RE, () => {
+    var result = content.replace(REMOVE_RE, function() {
         count++;
         return "";
     });
@@ -450,15 +450,15 @@ function removeFlags(content) {
 // =============================================================================
 
 // Parse command-line arguments
-const opts = parseArgs();
+var opts = parseArgs();
 
 // Read the entire .cproject file as a UTF-8 string.
 // We work with the raw text rather than parsing it as XML to avoid needing
 // any external XML library — the file format is regular enough for regex-based
 // manipulation, and working with text preserves all existing formatting and
 // comments that an XML round-trip might discard.
-let content = fs.readFileSync(opts.cproject, "utf-8");
-const original = content; // Keep a copy to detect whether any changes were made
+var content = fs.readFileSync(opts.cproject, "utf-8");
+var original = content; // Keep a copy to detect whether any changes were made
 
 if (opts.command === "add") {
     content = addFlags(content, opts);
@@ -474,7 +474,7 @@ if (opts.command === "add") {
     }
 
 } else { // command === "remove"
-    const result = removeFlags(content);
+    var result = removeFlags(content);
 
     if (result.count === 0) {
         // No coverage options were found — nothing to remove
@@ -483,7 +483,7 @@ if (opts.command === "add") {
         fs.writeFileSync(opts.cproject, result.content, "utf-8");
         console.log(
             "Removed " + result.count + " coverage option(s) from " +
-            path.basename(opts.cproject),
+            path.basename(opts.cproject)
         );
     }
 }

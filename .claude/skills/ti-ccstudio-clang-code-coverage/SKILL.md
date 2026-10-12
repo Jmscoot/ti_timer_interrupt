@@ -1,5 +1,5 @@
 ---
-name: ti-ccstudio-clang-code-coverage
+name: ti-clang-code-coverage
 description: Generate a code coverage or profiling report for a TI Clang project. Use when the user asks for code coverage, coverage report, profiling instrumentation, or wants to measure test coverage on an embedded target. Supports both TI Arm Clang (TMS470) and TI C29 Clang (C2000) compilers.
 allowed-tools: Bash, Read, Glob, Grep
 ---
@@ -60,7 +60,7 @@ and collection process.
 
 Several steps require paths that can be derived from the project and CCStudio IDE installation:
 
-- **CCStudio IDE installation path** (`<ccspath>`): Use `{ccs-install-dir}`.
+- **CCStudio IDE installation path** (`<ccspath>`): Read from `.claude/ccs.settings.md`.
 - **Compiler tools path** (`<compiler tools path>`): Read the project's `.cproject` file and find
   the `OPT_CODEGEN_VERSION` option (e.g., `value="TICLANG_4.0.4.LTS"` for Arm or
   `value="TICLANG_2.0.0.STS"` for C29). Match this version string against the compilers returned
@@ -244,9 +244,11 @@ and add project metadata.
 ### Resolving the shared stylesheet path
 
 The script accepts a `--ti-css` argument pointing to the shared `ti-brand.css` file in the CCS
-installation. The CSS file is at `{ccs-ai-resources-dir}/styles/ti-brand.css` — i.e., in a
-`styles/` subdirectory alongside `CCS.md`. If the file cannot be read, the script falls back
-to built-in styles automatically.
+installation. Resolve the path using the same approach used to locate `CCS.md` (read
+`.claude/ccs.settings.md` for the installation directory, then apply the platform-specific
+subdirectory). The CSS file is at `<ai directory>/styles/ti-brand.css` — i.e., in a `styles/`
+subdirectory alongside `CCS.md`. If the file cannot be read, the script falls back to built-in
+styles automatically.
 
 For Linux or macOS: execute `<ccspath>/ccs/scripting/run.sh` with arguments:
 For Windows: execute `<ccspath>/ccs/scripting/run.bat` with arguments:

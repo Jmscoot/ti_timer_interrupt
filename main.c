@@ -20,8 +20,8 @@
 //       절반인 5kHz가 됨 (On->Off 한 사이클에 토글이 2번 필요하기 때문).
 //       핀 출력 자체를 10kHz로 만들고 싶다면 TIMER0_PERIOD_US를 50us(20kHz)로.
 //
-#define TIMER0_PERIOD_US   100.0f   // 100us = 10kHz 인터럽트
-
+// #define TIMER0_PERIOD_US   100.0f   // 100us = 10kHz 인터럽트
+#define TIMER0_PERIOD_US   500000
 //
 // Function Prototypes
 //
@@ -43,7 +43,7 @@ void main(void)
 
     // ② GPIO 설정 잠금 해제 + 미사용 핀 풀업
     Device_initGPIO();
-
+    
     // ③ LED 핀을 출력으로 설정
     GPIO_setPinConfig(DEVICE_GPIO_CFG_LED2);              // GPIO34, 일반 GPIO 기능
     GPIO_setPadConfig(DEVICE_GPIO_PIN_LED2, GPIO_PIN_TYPE_STD);  // 출력이므로 풀업 disable
@@ -85,7 +85,7 @@ void timer0_init(void)
     periodCount = (uint32_t)((float)DEVICE_SYSCLK_FREQ / 1000000.0f * TIMER0_PERIOD_US);
 
     CPUTimer_setPeriod(CPUTIMER0_BASE, periodCount);
-    CPUTimer_setPreScaler(CPUTIMER0_BASE, 0);   // SYSCLKOUT 그대로 사용 (분주 없음)
+    CPUTimer_setPreScaler(CPUTIMER0_BASE, 0);   // fclk은 SYSCLKOUT 그대로 사용 (분주 없음)
 
     CPUTimer_stopTimer(CPUTIMER0_BASE);
     CPUTimer_reloadTimerCounter(CPUTIMER0_BASE);
