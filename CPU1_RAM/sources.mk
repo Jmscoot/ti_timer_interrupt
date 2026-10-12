@@ -107,4 +107,7 @@ S62_DEPS__QUOTED :=
 SUBDIRS := \
 . \
 device \
+device/driverlib \
+device/driverlib/ccs/Debug \
+device/driverlib/ccs/Release \
 

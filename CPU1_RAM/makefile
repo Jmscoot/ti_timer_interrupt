@@ -20,9 +20,44 @@ ORDERED_OBJS += \
 "./F2837xD_usDelay.obj" \
 "./main.obj" \
 "./device/device.obj" \
+"./device/driverlib/adc.obj" \
+"./device/driverlib/asysctl.obj" \
+"./device/driverlib/can.obj" \
+"./device/driverlib/cla.obj" \
+"./device/driverlib/clb.obj" \
+"./device/driverlib/cmpss.obj" \
+"./device/driverlib/cputimer.obj" \
+"./device/driverlib/dac.obj" \
+"./device/driverlib/dcsm.obj" \
+"./device/driverlib/dma.obj" \
+"./device/driverlib/ecap.obj" \
+"./device/driverlib/emif.obj" \
+"./device/driverlib/epwm.obj" \
+"./device/driverlib/eqep.obj" \
+"./device/driverlib/flash.obj" \
+"./device/driverlib/gpio.obj" \
+"./device/driverlib/hrpwm.obj" \
+"./device/driverlib/i2c.obj" \
+"./device/driverlib/interrupt.obj" \
+"./device/driverlib/ipc.obj" \
+"./device/driverlib/mcbsp.obj" \
+"./device/driverlib/memcfg.obj" \
+"./device/driverlib/sci.obj" \
+"./device/driverlib/sdfm.obj" \
+"./device/driverlib/spi.obj" \
+"./device/driverlib/sysctl.obj" \
+"./device/driverlib/upp.obj" \
+"./device/driverlib/usb.obj" \
+"./device/driverlib/version.obj" \
+"./device/driverlib/xbar.obj" \
 "../2837xD_RAM_lnk_cpu1.cmd" \
 "../F2837xD_Headers_nonBIOS_cpu1.cmd" \
-"C:/ti/C2000Ware_26_01_00_00/driverlib/f2837xd/driverlib/ccs/Debug/driverlib.lib" \
+"../device/driverlib/ccs/Debug/driverlib.lib" \
+"../device/driverlib/ccs/Debug/driverlib_coff.lib" \
+"../device/driverlib/ccs/Debug/driverlib_eabi.lib" \
+"../device/driverlib/ccs/Release/driverlib.lib" \
+"../device/driverlib/ccs/Release/driverlib_coff.lib" \
+"../device/driverlib/ccs/Release/driverlib_eabi.lib" \
 $(GEN_CMDS__FLAG) \
 -llibc.a \
 
@@ -35,8 +70,14 @@ RMDIR := RMDIR /S/Q
 -include sources.mk
 -include subdir_vars.mk
 -include device/subdir_vars.mk
+-include device/driverlib/subdir_vars.mk
+-include device/driverlib/ccs/Debug/subdir_vars.mk
+-include device/driverlib/ccs/Release/subdir_vars.mk
 -include subdir_rules.mk
 -include device/subdir_rules.mk
+-include device/driverlib/subdir_rules.mk
+-include device/driverlib/ccs/Debug/subdir_rules.mk
+-include device/driverlib/ccs/Release/subdir_rules.mk
 -include objects.mk
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -147,8 +188,9 @@ timer_interrupt.out: $(OBJS) $(CMD_SRCS) $(LIB_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "F2837xD_CodeStartBranch.obj" "F2837xD_DefaultISR.obj" "F2837xD_GlobalVariableDefs.obj" "F2837xD_Gpio.obj" "F2837xD_PieCtrl.obj" "F2837xD_PieVect.obj" "F2837xD_SysCtrl.obj" "F2837xD_usDelay.obj" "main.obj" "device\device.obj" 
-	-$(RM) "F2837xD_DefaultISR.d" "F2837xD_GlobalVariableDefs.d" "F2837xD_Gpio.d" "F2837xD_PieCtrl.d" "F2837xD_PieVect.d" "F2837xD_SysCtrl.d" "main.d" "device\device.d" 
+	-$(RM) "F2837xD_CodeStartBranch.obj" "F2837xD_DefaultISR.obj" "F2837xD_GlobalVariableDefs.obj" "F2837xD_Gpio.obj" "F2837xD_PieCtrl.obj" "F2837xD_PieVect.obj" "F2837xD_SysCtrl.obj" "F2837xD_usDelay.obj" "main.obj" "device\device.obj" "device\driverlib\adc.obj" "device\driverlib\asysctl.obj" "device\driverlib\can.obj" "device\driverlib\cla.obj" "device\driverlib\clb.obj" "device\driverlib\cmpss.obj" "device\driverlib\cputimer.obj" "device\driverlib\dac.obj" "device\driverlib\dcsm.obj" "device\driverlib\dma.obj" "device\driverlib\ecap.obj" "device\driverlib\emif.obj" "device\driverlib\epwm.obj" "device\driverlib\eqep.obj" "device\driverlib\flash.obj" "device\driverlib\gpio.obj" "device\driverlib\hrpwm.obj" "device\driverlib\i2c.obj" "device\driverlib\interrupt.obj" "device\driverlib\ipc.obj" "device\driverlib\mcbsp.obj" "device\driverlib\memcfg.obj" "device\driverlib\sci.obj" "device\driverlib\sdfm.obj" "device\driverlib\spi.obj" "device\driverlib\sysctl.obj" "device\driverlib\upp.obj" "device\driverlib\usb.obj" 
+	-$(RM) "device\driverlib\version.obj" "device\driverlib\xbar.obj" 
+	-$(RM) "F2837xD_DefaultISR.d" "F2837xD_GlobalVariableDefs.d" "F2837xD_Gpio.d" "F2837xD_PieCtrl.d" "F2837xD_PieVect.d" "F2837xD_SysCtrl.d" "main.d" "device\device.d" "device\driverlib\adc.d" "device\driverlib\asysctl.d" "device\driverlib\can.d" "device\driverlib\cla.d" "device\driverlib\clb.d" "device\driverlib\cmpss.d" "device\driverlib\cputimer.d" "device\driverlib\dac.d" "device\driverlib\dcsm.d" "device\driverlib\dma.d" "device\driverlib\ecap.d" "device\driverlib\emif.d" "device\driverlib\epwm.d" "device\driverlib\eqep.d" "device\driverlib\flash.d" "device\driverlib\gpio.d" "device\driverlib\hrpwm.d" "device\driverlib\i2c.d" "device\driverlib\interrupt.d" "device\driverlib\ipc.d" "device\driverlib\mcbsp.d" "device\driverlib\memcfg.d" "device\driverlib\sci.d" "device\driverlib\sdfm.d" "device\driverlib\spi.d" "device\driverlib\sysctl.d" "device\driverlib\upp.d" "device\driverlib\usb.d" "device\driverlib\version.d" "device\driverlib\xbar.d" 
 	-$(RM) "F2837xD_CodeStartBranch.d" "F2837xD_usDelay.d" 
 	-@echo ' '
 

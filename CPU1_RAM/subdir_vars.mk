@@ -9,9 +9,6 @@ CMD_SRCS += \
 ../2837xD_RAM_lnk_cpu1.cmd \
 ../F2837xD_Headers_nonBIOS_cpu1.cmd 
 
-LIB_SRCS += \
-C:/ti/C2000Ware_26_01_00_00/driverlib/f2837xd/driverlib/ccs/Debug/driverlib.lib 
-
 ASM_SRCS += \
 ../F2837xD_CodeStartBranch.asm \
 ../F2837xD_usDelay.asm 
